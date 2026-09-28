@@ -131,11 +131,14 @@ describe("Spark 2 detection", () => {
     expect(manager.isSpark2Device()).toBe(true);
   });
 
-  it("lets the transport veto name-based detection", async () => {
+  it("does not let the transport veto name-based detection", async () => {
+    // A genuine Spark 2 may only expose the legacy FFC0 service, so the transport
+    // reports a non-Spark-2 connection. The device is still a Spark 2 and must keep
+    // the chunked, acked preset upload — otherwise it drops the BLE link mid-transfer.
     connection.spark2 = false;
     await manager.connect(SPARK_2);
 
-    expect(manager.isSpark2Device()).toBe(false);
+    expect(manager.isSpark2Device()).toBe(true);
   });
 
   it("does not start the receiver when the connection fails", async () => {
