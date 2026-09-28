@@ -6,6 +6,8 @@ import { TonesStateStore } from "../../stores/tonestate";
 import { UIFeatureToggleStore } from "../../stores/uifeaturetoggles";
 import { appViewModel, DeviceViewModelContext } from "../app";
 import ToneListControl from "../tone-list";
+import ToneCloudSearchBar from "./tone-cloud-search";
+import { useToneCloudSearch } from "../../core/toneCloudSearch";
 
 interface ToneChooserModalProps {
   show: boolean;
@@ -30,6 +32,13 @@ const ToneChooserModal = ({ show, onClose }: ToneChooserModalProps) => {
   const favourites = TonesStateStore.useState((s) => s.storedPresets);
   const tones = TonesStateStore.useState((s) => s.toneResults);
   const tonecloud = TonesStateStore.useState((s) => s.toneCloudResults);
+  const isSearchInProgress = TonesStateStore.useState(
+    (s) => s.isSearchInProgress
+  );
+
+  const toneCloudSearch = useToneCloudSearch((query) =>
+    appViewModel.loadLatestToneCloudTones(false, query)
+  );
 
   const onApplyTone = async (tone) => {
     let t = Object.assign({}, tone);
@@ -67,6 +76,16 @@ const ToneChooserModal = ({ show, onClose }: ToneChooserModalProps) => {
 
   useEffect(() => {}, [tones, favourites, tonecloud]);
 
+  // Populate the ToneCloud tab the first time it is opened, preferring the
+  // cached results so opening the modal does not always hit the API.
+  useEffect(() => {
+    if (!show) return;
+    if (viewSelection !== "tonecloud") return;
+    if (tonecloud != null && tonecloud.length > 0) return;
+
+    appViewModel.loadLatestToneCloudTones(true);
+  }, [show, viewSelection]);
+
   const renderTonesView = () => {
     switch (viewSelection) {
       case "my":
@@ -97,13 +116,22 @@ const ToneChooserModal = ({ show, onClose }: ToneChooserModalProps) => {
       case "tonecloud":
         return (
           <div>
-            <p>Tones from the PG Tone Cloud:</p>
+            <ToneCloudSearchBar
+              keyword={toneCloudSearch.keyword}
+              onKeywordChange={toneCloudSearch.setKeyword}
+              onSearch={toneCloudSearch.search}
+              onPrevious={toneCloudSearch.goPrevious}
+              onNext={toneCloudSearch.goNext}
+              page={toneCloudSearch.page}
+              isFirstPage={toneCloudSearch.isFirstPage}
+              isSearching={isSearchInProgress}
+            />
             <ToneListControl
               toneList={tonecloud}
               favourites={favourites}
               onApplyTone={onApplyTone}
               onEditTone={() => {}}
-              noneMsg="No ToneCloud tones loaded."
+              noneMsg="No ToneCloud tones matched that search."
               enableToneEditor={false}
             />
           </div>
