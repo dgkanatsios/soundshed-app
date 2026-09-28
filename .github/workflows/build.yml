@@ -37,6 +37,7 @@ jobs:
       - run: npm run build-web
 
   desktop:
+    if: github.repository == 'soundshed/soundshed-app'
     name: Desktop (${{ matrix.platform }}-${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
