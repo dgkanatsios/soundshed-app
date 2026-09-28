@@ -2,12 +2,12 @@ import React, { useEffect } from "react";
 import { FxMappingSparkToTone, FxMappingToneToSpark } from "../../core/fxMapping";
 import { DeviceStateStore } from "../../stores/devicestate";
 import { TonesStateStore } from "../../stores/tonestate";
+import { useClearedOnOpen } from "../../core/useClearedOnOpen";
 import { UIFeatureToggleStore } from "../../stores/uifeaturetoggles";
 import { appViewModel, DeviceViewModelContext } from "../app";
 import ToneListControl from "../tone-list";
 import ToneCloudSearchBar from "./tone-cloud-search";
 import { useToneCloudSearch } from "../../core/toneCloudSearch";
-import { VIRTUAL_CHANNEL } from "../../core/sparkChannels";
 
 interface ToneChooserModalProps {
   show: boolean;
@@ -65,29 +65,30 @@ const ToneChooserModal = ({ show, onClose }: ToneChooserModalProps) => {
     let p = new FxMappingToneToSpark().mapFrom(t);
 
     // requestPresetChange now resolves only once the upload and channel switch have
-    // actually finished, so the follow-up query can no longer collide with them.
+    // actually finished, and updates the UI from the tone we uploaded.
     if ((await deviceViewModel.requestPresetChange(p)) == false) {
       alert("Could not load tone. Please wait and try again.");
       return;
     }
 
-    // Applied tones live on the virtual channel, not a hardware slot.
-    await deviceViewModel.requestPresetConfig(VIRTUAL_CHANNEL);
+    // No follow-up query: a Spark 2 answers a query for the virtual channel with the
+    // contents of its selected hardware slot, which would show the wrong tone.
 
     onClose();
   };
 
   useEffect(() => {}, [tones, favourites, tonecloud]);
 
-  // Populate the ToneCloud tab the first time it is opened, preferring the
-  // cached results so opening the modal does not always hit the API.
-  useEffect(() => {
-    if (!show) return;
-    if (viewSelection !== "tonecloud") return;
-    if (tonecloud != null && tonecloud.length > 0) return;
-
-    appViewModel.loadLatestToneCloudTones(true);
-  }, [show, viewSelection]);
+  // The ToneCloud tab opens empty rather than restoring the previous search. Results
+  // live in a global store, so the old list would otherwise reappear alongside an
+  // empty search box and look like a result for it.
+  useClearedOnOpen(show, () => {
+    TonesStateStore.update((s) => {
+      s.toneCloudResults = [];
+      s.isSearchInProgress = false;
+    });
+    toneCloudSearch.reset();
+  });
 
   const renderTonesView = () => {
     switch (viewSelection) {
@@ -134,7 +135,13 @@ const ToneChooserModal = ({ show, onClose }: ToneChooserModalProps) => {
               favourites={favourites}
               onApplyTone={onApplyTone}
               onEditTone={() => {}}
-              noneMsg="No ToneCloud tones matched that search."
+              noneMsg={
+                isSearchInProgress
+                  ? "Searching…"
+                  : toneCloudSearch.hasSearched
+                  ? "No ToneCloud tones matched that search."
+                  : "Search ToneCloud for tones above."
+              }
               enableToneEditor={false}
             />
           </div>

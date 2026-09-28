@@ -6,6 +6,7 @@
   "repository": "https://github.com/dgkanatsios/soundshed-app",
   "scripts": {
     "build-web": "npx tsc --noEmit && webpack --config ./webpack.web.config.js",
+    "serve-web": "node tools/serve-web.js",
     "build-electron": "npx tsc && webpack --config ./webpack.electron.config.js",
     "build-tools": "npx tsc -p tsconfig.tools.json",
     "sim:spark": "node build-tools/tools/spark-amp-simulator/src/cli.js",

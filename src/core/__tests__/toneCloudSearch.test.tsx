@@ -68,13 +68,13 @@ describe("page arithmetic", () => {
   });
 });
 
-describe("useToneCloudSearch", () => {
-  const setup = () => {
-    const load = vi.fn();
-    const view = renderHook(() => useToneCloudSearch(load));
-    return { load, view };
-  };
+const setup = () => {
+  const load = vi.fn();
+  const view = renderHook(() => useToneCloudSearch(load));
+  return { load, view };
+};
 
+describe("useToneCloudSearch", () => {
   it("starts on the first page with an empty keyword and loads nothing", () => {
     const { load, view } = setup();
 
@@ -157,5 +157,59 @@ describe("useToneCloudSearch", () => {
     act(() => view.result.current.goNext());
 
     expect(load).toHaveBeenLastCalledWith({ page: 2, keyword: "second" });
+  });
+});
+
+describe("reset", () => {
+  it("clears the keyword and returns to the first page", () => {
+    const { view } = setup();
+
+    act(() => view.result.current.setKeyword("blues"));
+    act(() => view.result.current.goNext());
+    act(() => view.result.current.reset());
+
+    expect(view.result.current.keyword).toBe("");
+    expect(view.result.current.page).toBe(FIRST_PAGE);
+    expect(view.result.current.isFirstPage).toBe(true);
+  });
+
+  it("does not run a query, so reopening the tab costs nothing", () => {
+    const { load, view } = setup();
+
+    act(() => view.result.current.setKeyword("blues"));
+    act(() => view.result.current.search());
+    load.mockClear();
+
+    act(() => view.result.current.reset());
+
+    expect(load).not.toHaveBeenCalled();
+  });
+});
+
+describe("hasSearched", () => {
+  it("is false before anything is searched", () => {
+    const { view } = setup();
+
+    expect(view.result.current.hasSearched).toBe(false);
+  });
+
+  it.each([
+    ["search", (s: any) => s.search()],
+    ["goNext", (s: any) => s.goNext()],
+  ])("becomes true after %s", (_label, run) => {
+    const { view } = setup();
+
+    act(() => run(view.result.current));
+
+    expect(view.result.current.hasSearched).toBe(true);
+  });
+
+  it("goes back to false after a reset", () => {
+    const { view } = setup();
+
+    act(() => view.result.current.search());
+    act(() => view.result.current.reset());
+
+    expect(view.result.current.hasSearched).toBe(false);
   });
 });
