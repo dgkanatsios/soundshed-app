@@ -1,5 +1,7 @@
 # Soundshed Control
 
+This is an independently maintained fork of [Soundshed Control](https://github.com/soundshed/soundshed-app) by Webprofusion / Christopher Cook. It is not the official soundshed.com site. The original MIT copyright and license notice are preserved in [LICENSE](LICENSE), including in the web build.
+
 Desktop and Web UI which can be used to:
 - manage tone library and browse tone communities
 - connect to supported amp via bluetooth, manage basic settings and set presets.
@@ -44,7 +46,7 @@ Input event from keyboard or midi can be mapped to a preset slot (e.g. channels 
 ----------------------------------------
 
 ## Developer Build Info
-![app build](https://github.com/soundshed/soundshed-app/workflows/app%20build/badge.svg)
+![app build](https://github.com/dgkanatsios/soundshed-app/actions/workflows/build.yml/badge.svg)
 - Prerequisites: Node 20.x or higher, npm 6.14 or higher. Windows, macOS or Linux
 
 - VS Code is the recommended editor
@@ -55,10 +57,18 @@ Input event from keyboard or midi can be mapped to a preset slot (e.g. channels 
 - run `npm install` on the repo path
 
 ## Run Web Version
-- edit platformUtils.ts to include platformUtils.web.ts, edit env.ts to be web mode
+- Web mode is selected by default in `src/core/platformUtils.ts` and `src/env.ts`. To enable backing-track search locally, set `YOUTUBE_API_KEY` in your environment before building (see Netlify instructions below).
 - Run `npm run watch-web` in one terminal to continuously rebuild the UI code or `npm run build-web` to just build once. Note that there is a build for the app UI and a build for the electron main process, some of which use the same files (types etc).
 - Run `npx http-server build` to start local web server on http://localhost:8080/
 - Example with SSL enabled: `npx http-server build --ssl -K C:/Work/Misc/ssl/localhost-key.pem -C C:/Work/Misc/ssl/localhost.pem`
+
+## Deploy this fork to Netlify
+
+- Import `dgkanatsios/soundshed-app` as a Netlify site, with `main` as the production branch. The committed `netlify.toml` runs `npm run build-web` on Node 22 and publishes `build/`. Netlify installs the npm dependencies automatically.
+- Configure `YOUTUBE_API_KEY` in Netlify's build environment with a **key you control** if you want Jam backing-track search. Restrict it in Google Cloud to the YouTube Data API and your Netlify site's HTTPS referrer(s), then redeploy. This is a **public browser key**, not a secret: it is included in the generated JavaScript. Without a key, search is explicitly unavailable, but saved favourites and other app features remain usable.
+- This fork no longer loads the original site's Google Analytics property. If you add your own analytics, configure consent and privacy notices appropriate to your deployment.
+- Amp connection needs HTTPS and a browser/OS combination with Web Bluetooth support. This fork still uses the upstream `api-proxy.soundshed.com` service for tone/community features, which you do not control; check its availability and usage terms before relying on it.
+- The existing GitHub desktop release workflow depends on the original project's private signing repository and is **not** a way to publish this fork's web app. Netlify builds directly from this repository.
 
 ## Run Electron Version
 - edit platformUtils.ts to include platformUtils.electron.ts, edit env.ts not to be web mode
@@ -121,4 +131,3 @@ See our [Spark Amp Protocol document](docs/spark-amp-protocol.md) for current un
 At the bluetooth level the app registers a listener to consume data changes for a hardware characteristic, this delivers a stream of bytes in chunks. The app continuously queues the data recieved and looks for message terminator bytes (F7). When encountered it queues the current data for message processing higher up the chain.
 
 The app then continuously runs a message processing loop to peek for terminated data chunks from the bluetooth reader, these are picked up from the bluetooth reader queue and parsed/interpreted into messages for our app, then added to our app message queue for later processing.
-
