@@ -15,6 +15,9 @@ export interface VideoSearchResult {
 export class VideoSearchApi {
 
     async search(query: string) {
+        if (!envSettings.YoutubeAPIKey) {
+            throw new Error("Backing-track search requires a YouTube Data API key.");
+        }
 
         var opts: youtubeSearch.YouTubeSearchOptions = {
             maxResults: 10,

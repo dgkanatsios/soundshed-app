@@ -1,6 +1,7 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+const webpack = require('webpack');
 
 var path = require('path');
 
@@ -41,6 +42,9 @@ module.exports = {
 	},
 	plugins: [
 		new NodePolyfillPlugin(),
+		new webpack.DefinePlugin({
+			'process.env.YOUTUBE_API_KEY': JSON.stringify(process.env.YOUTUBE_API_KEY || '')
+		}),
 		new HtmlWebpackPlugin({
 			template: './index.html'
 		}),
@@ -48,7 +52,8 @@ module.exports = {
 			patterns: [
 				{ from: './css', to: 'css' },
 				{ from: './lib', to: 'lib' },
-				{ from: './images', to: 'images' }
+				{ from: './images', to: 'images' },
+				{ from: './LICENSE', to: 'LICENSE' }
 			]
 		})
 	]
