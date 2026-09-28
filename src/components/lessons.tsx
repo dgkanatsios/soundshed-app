@@ -5,6 +5,7 @@ import { lessonManager } from "./app";
 import { VideoSearchResult } from "../core/videoSearchApi";
 import { LessonStateStore } from "../stores/lessonstate";
 import { UIFeatureToggleStore } from "../stores/uifeaturetoggles";
+import { useClearedOnOpen } from "../core/useClearedOnOpen";
 import env from "../env";
 
 const LessonsControl = () => {
@@ -35,13 +36,16 @@ const LessonsControl = () => {
     lessonManager.deleteFavourite(t);
   };
 
-  React.useEffect(() => {
-    if (!env.YoutubeAPIKey) return;
-    if (videoSearchResults == null || videoSearchResults.length == 0) {
-      lessonManager.getVideoSearchResults(true, "backing track");
-      console.debug("Lessons updating.");
-    }
-  }, []);
+  // The Jam panel opens empty. Results live in a global store, so without this the
+  // previous session's list reappears and looks like a result for the empty search box.
+  useClearedOnOpen(true, () => {
+    LessonStateStore.update((s) => {
+      s.searchResults = [];
+      s.isSearching = false;
+      s.searchError = null;
+      s.hasSearched = false;
+    });
+  });
 
   React.useEffect(() => {}, [videoSearchResults]);
 

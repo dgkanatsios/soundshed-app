@@ -42,6 +42,12 @@ export interface ToneCloudSearch {
   search: () => void;
   goNext: () => void;
   goPrevious: () => void;
+
+  /** True once a query has been run, so an empty list can be worded correctly. */
+  hasSearched: boolean;
+
+  /** Clears the keyword and returns to the first page, without running a query. */
+  reset: () => void;
 }
 
 export type ToneCloudLoader = (query: PGPresetQuery) => unknown;
@@ -55,9 +61,11 @@ export type ToneCloudLoader = (query: PGPresetQuery) => unknown;
 export function useToneCloudSearch(load: ToneCloudLoader): ToneCloudSearch {
   const [keyword, setKeyword] = React.useState("");
   const [page, setPage] = React.useState(FIRST_PAGE);
+  const [hasSearched, setHasSearched] = React.useState(false);
 
   const runQuery = (targetPage: number) => {
     setPage(targetPage);
+    setHasSearched(true);
     load(buildToneCloudQuery(keyword, targetPage));
   };
 
@@ -66,6 +74,7 @@ export function useToneCloudSearch(load: ToneCloudLoader): ToneCloudSearch {
     setKeyword,
     page,
     isFirstPage: page <= FIRST_PAGE,
+    hasSearched,
 
     // A new search always restarts at page 1, otherwise the first page of
     // results for the new keyword is silently skipped.
@@ -77,6 +86,13 @@ export function useToneCloudSearch(load: ToneCloudLoader): ToneCloudSearch {
       const target = previousPage(page);
       if (target === page) return;
       runQuery(target);
+    },
+
+    // Deliberately does not call the loader: the surface is being cleared, not searched.
+    reset: () => {
+      setKeyword("");
+      setPage(FIRST_PAGE);
+      setHasSearched(false);
     },
   };
 }
