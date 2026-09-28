@@ -1,6 +1,9 @@
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
 
+// Registers matchers such as toHaveTextContent / toBeInTheDocument.
+import "@testing-library/jest-dom/vitest";
+
 /**
  * Testing Library only registers its automatic cleanup when a global `afterEach`
  * exists, which Vitest does not provide unless `globals` is enabled. Without
