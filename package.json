@@ -11,7 +11,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tools.json",
-    "build-web": "tsc && webpack --config ./webpack.web.config.js",
+    "build-web": "tsc && webpack --output-clean --config ./webpack.web.config.js",
     "build-electron": "tsc && webpack --config ./webpack.electron.config.js",
     "build-tools": "tsc -p tsconfig.tools.json",
     "sim:spark": "node build-tools/tools/spark-amp-simulator/src/cli.js",
