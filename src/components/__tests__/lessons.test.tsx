@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import "../../testing/componentTestSetup";
@@ -41,6 +41,14 @@ const resetStore = () =>
   });
 
 const searchBox = () => screen.getByPlaceholderText(/search backing tracks/i);
+
+// The panel clears the store when it mounts, so state a test wants on screen has
+// to be applied after the render rather than before it.
+const renderLessons = (patch: Record<string, any> = {}) => {
+  const result = render(<LessonsControl />);
+  if (Object.keys(patch).length > 0) act(() => setState(patch));
+  return result;
+};
 
 describe("Jam backing-track search", () => {
   beforeEach(() => {
@@ -102,8 +110,7 @@ describe("Jam backing-track search", () => {
 
     it("ignores a second search while one is already running", async () => {
       const user = userEvent.setup();
-      setState({ isSearching: true });
-      render(<LessonsControl />);
+      renderLessons({ isSearching: true });
       getVideoSearchResults.mockClear();
 
       await user.type(searchBox(), "x{Enter}");
@@ -112,20 +119,20 @@ describe("Jam backing-track search", () => {
     });
   });
 
-  describe("populating on open", () => {
-    it("requests results when there are none", () => {
-      render(<LessonsControl />);
+  describe("opening the panel", () => {
+    it("does not run a search of its own", () => {
+      renderLessons();
 
-      expect(getVideoSearchResults).toHaveBeenCalledWith(true, "backing track");
+      expect(getVideoSearchResults).not.toHaveBeenCalled();
     });
 
-    it("does not re-request when results are already present", () => {
+    it("discards results left over from a previous visit", () => {
       setState({
         searchResults: [
           {
             itemId: "a",
             url: "u",
-            title: "Track",
+            title: "Stale Track",
             channelTitle: "C",
             description: "",
             thumbnailUrl: "t",
@@ -133,18 +140,34 @@ describe("Jam backing-track search", () => {
             datePublished: new Date(),
           },
         ],
+        hasSearched: true,
       });
 
-      render(<LessonsControl />);
+      renderLessons();
 
-      expect(getVideoSearchResults).not.toHaveBeenCalled();
+      expect(screen.queryByText("Stale Track")).toBeNull();
+      expect(screen.getByText(/no results yet/i)).toBeTruthy();
+    });
+
+    it("leaves the search box empty", () => {
+      renderLessons();
+
+      expect((searchBox() as HTMLInputElement).value).toBe("");
+    });
+
+    it("clears results again on the way out, for the next visit", () => {
+      const { unmount } = renderLessons({ hasSearched: true });
+
+      unmount();
+
+      expect(LessonStateStore.getRawState().hasSearched).toBe(false);
+      expect(LessonStateStore.getRawState().searchResults).toEqual([]);
     });
   });
 
   describe("reporting state", () => {
     it("shows the failure message and hides the result list", () => {
-      setState({ searchError: "Quota is gone." });
-      render(<LessonsControl />);
+      renderLessons({ searchError: "Quota is gone." });
 
       expect(screen.getByRole("alert")).toHaveTextContent("Quota is gone.");
       expect(screen.queryByText(/no results yet/i)).toBeNull();
@@ -152,8 +175,7 @@ describe("Jam backing-track search", () => {
 
     it("offers a retry that runs the search again", async () => {
       const user = userEvent.setup();
-      setState({ searchError: "Quota is gone." });
-      render(<LessonsControl />);
+      renderLessons({ searchError: "Quota is gone." });
       getVideoSearchResults.mockClear();
 
       await user.click(screen.getByRole("button", { name: /try again/i }));
@@ -162,8 +184,7 @@ describe("Jam backing-track search", () => {
     });
 
     it("shows a busy indicator and disables the button while searching", () => {
-      setState({ isSearching: true });
-      render(<LessonsControl />);
+      renderLessons({ isSearching: true });
 
       expect(screen.getByRole("status", { name: /searching/i })).toBeTruthy();
       expect(
@@ -173,21 +194,19 @@ describe("Jam backing-track search", () => {
     });
 
     it("says nothing has been searched yet before the first search", () => {
-      render(<LessonsControl />);
+      renderLessons();
 
       expect(screen.getByText(/no results yet/i)).toBeTruthy();
     });
 
     it("says nothing matched once a search has run", () => {
-      setState({ hasSearched: true });
-      render(<LessonsControl />);
+      renderLessons({ hasSearched: true });
 
       expect(screen.getByText(/no backing tracks matched/i)).toBeTruthy();
     });
 
     it("says it is searching while a search is in flight", () => {
-      setState({ isSearching: true });
-      render(<LessonsControl />);
+      renderLessons({ isSearching: true });
 
       expect(screen.getByText(/searching/i)).toBeTruthy();
     });
