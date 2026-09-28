@@ -15,6 +15,7 @@ module.exports = {
 	},
 	output: {
 		path: path.resolve(__dirname, 'build'),
+		clean: true,
 		filename: '[name].[contenthash].js',
 		sourceMapFilename: '[name].js.map'
 	},
@@ -53,7 +54,7 @@ module.exports = {
 				{ from: './css', to: 'css' },
 				{ from: './lib', to: 'lib' },
 				{ from: './images', to: 'images' },
-				{ from: './LICENSE', to: 'LICENSE' }
+				{ from: './LICENSE', to: 'LICENSE', toType: 'file' }
 			]
 		})
 	]
