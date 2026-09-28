@@ -98,6 +98,15 @@ const AboutControl = () => {
           <li>Pedal Board photo — Jarrod Reed on Unsplash</li>
           <li>Wooden Pedal Board photo — Luana Azevedo on Unsplash</li>
           <li>Soundshed Control by Christopher Cook</li>
+          <li>
+            Independently maintained fork by Dimitris Gkanatsios, based on{" "}
+            <a href="#" onClick={(e) => openLink(e, "https://github.com/soundshed/soundshed-app")} aria-label="Original Soundshed repository on GitHub (opens externally)">
+              Soundshed Control
+            </a>. Licensed under the{" "}
+            <a href="#" onClick={(e) => openLink(e, "https://github.com/dgkanatsios/soundshed-app/blob/main/LICENSE")} aria-label="MIT license on GitHub (opens externally)">
+              MIT license
+            </a>.
+          </li>
         </ul>
       </div>
 

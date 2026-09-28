@@ -5,6 +5,7 @@ import { lessonManager } from "./app";
 import { VideoSearchResult } from "../core/videoSearchApi";
 import { LessonStateStore } from "../stores/lessonstate";
 import { UIFeatureToggleStore } from "../stores/uifeaturetoggles";
+import env from "../env";
 
 const LessonsControl = () => {
   const enableLessons = UIFeatureToggleStore.useState((s) => s.enableLessons);
@@ -32,6 +33,7 @@ const LessonsControl = () => {
   };
 
   React.useEffect(() => {
+    if (!env.YoutubeAPIKey) return;
     if (videoSearchResults == null || videoSearchResults.length == 0) {
       lessonManager.getVideoSearchResults(true, "backing track");
       console.debug("Lessons updating.");
@@ -63,25 +65,31 @@ const LessonsControl = () => {
       case "backingtracks":
         return (
           <div className="jam-search-section">
-            <div className="jam-search-bar">
-              <label htmlFor="jam-search-input" className="sr-only">Search backing tracks</label>
-              <input
-                id="jam-search-input"
-                type="text"
-                className="jam-search-input"
-                placeholder="Search backing tracks…"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                onKeyPress={onKeySearch}
-              />
-              <button className="jam-search-btn" onClick={onSearch} aria-label="Search">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                Search
-              </button>
-            </div>
-            {listVideoItems(videoSearchResults)}
+            {!env.YoutubeAPIKey ? (
+              <div className="jam-empty">Backing-track search is unavailable until this site is configured with its own YouTube Data API key. Saved favourites are still available.</div>
+            ) : (
+              <>
+                <div className="jam-search-bar">
+                  <label htmlFor="jam-search-input" className="sr-only">Search backing tracks</label>
+                  <input
+                    id="jam-search-input"
+                    type="text"
+                    className="jam-search-input"
+                    placeholder="Search backing tracks…"
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    onKeyPress={onKeySearch}
+                  />
+                  <button className="jam-search-btn" onClick={onSearch} aria-label="Search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    Search
+                  </button>
+                </div>
+                {listVideoItems(videoSearchResults)}
+              </>
+            )}
           </div>
         );
       case "favourites":
