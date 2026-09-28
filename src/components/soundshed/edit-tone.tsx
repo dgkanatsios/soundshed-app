@@ -2,7 +2,7 @@ import React from "react";
 import Alert from "react-bootstrap/Alert";
 import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
-import Tags from "@yaireo/tagify/dist/react.tagify"; // React-wrapper file
+import Tags from "@yaireo/tagify/dist/react.tagify.jsx"; // React-wrapper file
 import "@yaireo/tagify/dist/tagify.css"; // Tagify CSS
 
 import { appViewModel } from "../app";
@@ -141,7 +141,6 @@ const EditToneControl = () => {
                 <Tags
                   value={tone.artists}
                   onChange={(e) => {
-                    e.persist();
                     if (e.target.value?.length > 0) {
                       let list = JSON.parse(e.target.value)
                         .filter((t) => t != null)
@@ -160,7 +159,6 @@ const EditToneControl = () => {
                 <Tags
                   value={tone.categories}
                   onChange={(e) => {
-                    e.persist();
                     if (e.target.value?.length > 0) {
                       let list = JSON.parse(e.target.value)
                         .filter((t) => t != null)
