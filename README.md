@@ -130,6 +130,47 @@ fails the round trip rather than silently corrupting amp state.
 `npm test` runs in CI on every push and pull request, and the web build depends
 on it passing.
 
+## Troubleshooting Bluetooth connections
+
+If the amp disconnects, refuses a preset, or stops responding, turn on the BLE
+tracer before trying anything else. It records every write, received
+notification and connection event in a 400-entry ring buffer. It does nothing
+until you enable it.
+
+Open the browser devtools console (or Electron's) and run:
+
+```js
+localStorage.setItem("_bleTrace", "1");  // enable, then reproduce the problem
+window.__sparkTrace();                   // print the buffer at any time
+```
+
+The flag persists across reloads. Turn it off with
+`localStorage.removeItem("_bleTrace")`.
+
+When the GATT link drops, the trace is written to the console automatically
+as `[Spark BLE trace] device disconnected unexpectedly`. Each line shows the
+time since the tracer started, the gap since the previous entry, the entry
+kind (`write`, `recv`, `event`, `error`) and the first bytes of the chunk.
+An illustrative excerpt:
+
+```
++  12840ms (   38ms) recv  20b 01fe000053fe1a00...
++  12902ms (   62ms) event send block 3412b ...
++  12903ms (    1ms) write 173b 01fe000053fe0a00...
+```
+
+**Why the tracer exists:** logs read after the fact don't help with BLE
+drops. By the time you notice the disconnect, the writes that caused it have
+scrolled out of the console. The tracer dumps its buffer at the moment the
+link dies, and that is the only reliable way to see what came right before it.
+
+**Look for missing responses, not errors.** The Spark 2 disconnect bug (#9)
+never produced an error. The amp answered every small command in about 40ms,
+then answered *none* of four large preset writes, and then the link dropped.
+Compare `write` entries against `recv` entries and check the gaps.
+
+When reporting a connection bug, attach the trace output.
+
 ## Release Process 
 - Electron
     - ensure electron config selected
