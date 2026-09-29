@@ -2,6 +2,8 @@
 
 This is an independently maintained fork of [Soundshed Control](https://github.com/soundshed/soundshed-app) by Webprofusion / Christopher Cook. It is not the official soundshed.com site. The original MIT copyright and license notice are preserved in [LICENSE](LICENSE), including in the web build.
 
+**Use it in your browser:** https://sparkcontrol.netlify.app/ (amp control needs a browser with Web Bluetooth support, such as Chrome or Edge).
+
 Desktop and Web UI which can be used to:
 - manage tone library and browse tone communities
 - connect to supported amp via bluetooth, manage basic settings and set presets.
