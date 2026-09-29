@@ -18,6 +18,7 @@ const renderBar = (overrides: Partial<BarProps> = {}) => {
     page: 1,
     isFirstPage: true,
     isSearching: false,
+    canPage: true,
     ...overrides,
   };
 
@@ -129,5 +130,45 @@ describe("ToneCloudSearchBar", () => {
     const { container } = renderBar();
 
     expect(container.querySelectorAll("svg").length).toBe(3);
+  });
+});
+
+describe("ToneCloudSearchBar paging before a search", () => {
+  it.each([/previous page/i, /next page/i])(
+    "disables %s until a search has run",
+    (name) => {
+      renderBar({ canPage: false, isFirstPage: false });
+
+      expect(
+        (screen.getByRole("button", { name }) as HTMLButtonElement).disabled
+      ).toBe(true);
+    }
+  );
+
+  it("does not page when the disabled Next arrow is clicked", async () => {
+    const user = userEvent.setup();
+    const { props } = renderBar({ canPage: false });
+
+    await user.click(screen.getByRole("button", { name: /next page/i }));
+
+    expect(props.onNext).not.toHaveBeenCalled();
+  });
+
+  it("enables Next once a search has run", () => {
+    renderBar({ canPage: true });
+
+    expect(
+      (screen.getByRole("button", { name: /next page/i }) as HTMLButtonElement)
+        .disabled
+    ).toBe(false);
+  });
+
+  it("keeps Search available before any search", () => {
+    renderBar({ canPage: false });
+
+    expect(
+      (screen.getByRole("button", { name: /^search$/i }) as HTMLButtonElement)
+        .disabled
+    ).toBe(false);
   });
 });

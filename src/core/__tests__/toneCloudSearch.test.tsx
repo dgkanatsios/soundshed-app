@@ -98,6 +98,7 @@ describe("useToneCloudSearch", () => {
   it("resets to page one when a new search runs", () => {
     const { load, view } = setup();
 
+    act(() => view.result.current.search());
     act(() => view.result.current.goNext());
     act(() => view.result.current.goNext());
     expect(view.result.current.page).toBe(3);
@@ -116,15 +117,17 @@ describe("useToneCloudSearch", () => {
     const { load, view } = setup();
 
     act(() => view.result.current.setKeyword("clean"));
+    act(() => view.result.current.search());
     act(() => view.result.current.goNext());
 
     expect(view.result.current.page).toBe(2);
-    expect(load).toHaveBeenCalledWith({ page: 2, keyword: "clean" });
+    expect(load).toHaveBeenLastCalledWith({ page: 2, keyword: "clean" });
   });
 
   it("pages backward and reports the first page", () => {
     const { view } = setup();
 
+    act(() => view.result.current.search());
     act(() => view.result.current.goNext());
     act(() => view.result.current.goNext());
 
@@ -193,13 +196,10 @@ describe("hasSearched", () => {
     expect(view.result.current.hasSearched).toBe(false);
   });
 
-  it.each([
-    ["search", (s: any) => s.search()],
-    ["goNext", (s: any) => s.goNext()],
-  ])("becomes true after %s", (_label, run) => {
+  it("becomes true after a search", () => {
     const { view } = setup();
 
-    act(() => run(view.result.current));
+    act(() => view.result.current.search());
 
     expect(view.result.current.hasSearched).toBe(true);
   });
@@ -211,5 +211,39 @@ describe("hasSearched", () => {
     act(() => view.result.current.reset());
 
     expect(view.result.current.hasSearched).toBe(false);
+  });
+});
+
+describe("paging before any search", () => {
+  // Reported from real use: the ToneCloud tab opened empty, and pressing the Next
+  // arrow showed results — page 2 of an unfiltered listing, with page 1 skipped.
+  it("does not load anything when Next is pressed before searching", () => {
+    const { load, view } = setup();
+
+    act(() => view.result.current.goNext());
+
+    expect(load).not.toHaveBeenCalled();
+    expect(view.result.current.page).toBe(FIRST_PAGE);
+    expect(view.result.current.hasSearched).toBe(false);
+  });
+
+  it("does not load anything when Previous is pressed before searching", () => {
+    const { load, view } = setup();
+
+    act(() => view.result.current.goPrevious());
+
+    expect(load).not.toHaveBeenCalled();
+  });
+
+  it("does not page again after a reset until a new search runs", () => {
+    const { load, view } = setup();
+
+    act(() => view.result.current.search());
+    act(() => view.result.current.reset());
+    load.mockClear();
+
+    act(() => view.result.current.goNext());
+
+    expect(load).not.toHaveBeenCalled();
   });
 });

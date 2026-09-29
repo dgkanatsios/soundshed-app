@@ -9,6 +9,9 @@ interface ToneCloudSearchBarProps {
   page: number;
   isFirstPage: boolean;
   isSearching: boolean;
+
+  /** False until a search has run. Paging before then would skip straight to page 2. */
+  canPage: boolean;
 }
 
 const ToneCloudSearchBar = ({
@@ -20,6 +23,7 @@ const ToneCloudSearchBar = ({
   page,
   isFirstPage,
   isSearching,
+  canPage,
 }: ToneCloudSearchBarProps) => {
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
@@ -70,7 +74,7 @@ const ToneCloudSearchBar = ({
           type="button"
           className="ss-page-btn"
           onClick={onPrevious}
-          disabled={isFirstPage || isSearching}
+          disabled={!canPage || isFirstPage || isSearching}
           aria-label="Previous page"
           title="Previous page"
         >
@@ -105,7 +109,7 @@ const ToneCloudSearchBar = ({
           type="button"
           className="ss-page-btn"
           onClick={onNext}
-          disabled={isSearching}
+          disabled={!canPage || isSearching}
           aria-label="Next page"
           title="Next page"
         >

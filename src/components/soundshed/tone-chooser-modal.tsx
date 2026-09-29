@@ -129,6 +129,7 @@ const ToneChooserModal = ({ show, onClose }: ToneChooserModalProps) => {
               page={toneCloudSearch.page}
               isFirstPage={toneCloudSearch.isFirstPage}
               isSearching={isSearchInProgress}
+              canPage={toneCloudSearch.hasSearched}
             />
             <ToneListControl
               toneList={tonecloud}
