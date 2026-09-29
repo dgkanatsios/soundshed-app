@@ -80,9 +80,15 @@ export function useToneCloudSearch(load: ToneCloudLoader): ToneCloudSearch {
     // results for the new keyword is silently skipped.
     search: () => runQuery(FIRST_PAGE),
 
-    goNext: () => runQuery(nextPage(page)),
+    goNext: () => {
+      // Paging only makes sense through the results of a search. Before one has run,
+      // "next" would load page 2 of everything and silently skip page 1.
+      if (!hasSearched) return;
+      runQuery(nextPage(page));
+    },
 
     goPrevious: () => {
+      if (!hasSearched) return;
       const target = previousPage(page);
       if (target === page) return;
       runQuery(target);
