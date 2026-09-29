@@ -14,6 +14,7 @@ class FakeConnection implements SerialCommsProvider {
   public reconnectCalls = 0;
   public disconnectCalls = 0;
   public beginReceiveCalls = 0;
+  public receiveResult = true;
   public ackResult = true;
   public ackWaits: { cmd: number | number[]; subCmd: number }[] = [];
   public spark2 = false;
@@ -33,7 +34,7 @@ class FakeConnection implements SerialCommsProvider {
 
   async beginQueuedReceive(): Promise<boolean> {
     this.beginReceiveCalls++;
-    return true;
+    return this.receiveResult;
   }
 
   readReceiveQueue(): Array<Uint8Array> {
@@ -350,6 +351,52 @@ describe("connection loss and reconnect", () => {
     const basicManager = new SparkDeviceManager(basic);
 
     await expect(basicManager.reconnect()).resolves.toBe(false);
+  });
+
+  describe("when the amp's notifications cannot be subscribed to", () => {
+    // Without notifications nothing the amp says is ever received. Reporting success
+    // left the app "connected" to an amp it could not hear, and the transport kept
+    // its link up, so later attempts short-circuited and never recovered.
+    it("reports the connection as failed", async () => {
+      connection.receiveResult = false;
+
+      await expect(manager.connect(SPARK_40)).resolves.toBe(false);
+    });
+
+    it("drops the half-open link so the next attempt starts clean", async () => {
+      connection.receiveResult = false;
+
+      await manager.connect(SPARK_40);
+
+      expect(connection.disconnectCalls).toBe(1);
+    });
+
+    it("does not poll a receive queue that will never fill", async () => {
+      connection.receiveResult = false;
+      await manager.connect(SPARK_40);
+
+      const readSpy = vi.spyOn(connection, "readReceiveQueue");
+      await vi.advanceTimersByTimeAsync(500);
+
+      expect(readSpy).not.toHaveBeenCalled();
+    });
+
+    it("reports a reconnect as failed too", async () => {
+      await manager.connect(SPARK_40);
+      connection.receiveResult = false;
+
+      await expect(manager.reconnect()).resolves.toBe(false);
+      expect(connection.disconnectCalls).toBe(1);
+    });
+
+    it("connects normally on a later attempt once notifications work", async () => {
+      connection.receiveResult = false;
+      await manager.connect(SPARK_40);
+
+      connection.receiveResult = true;
+
+      await expect(manager.connect(SPARK_40)).resolves.toBe(true);
+    });
   });
 
   it("stops polling the receive queue after disconnect", async () => {
