@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { FxMappingSparkToTone, FxMappingToneToSpark } from "../../core/fxMapping";
 import { DeviceStateStore } from "../../stores/devicestate";
 import { TonesStateStore } from "../../stores/tonestate";
-import { useClearedOnOpen } from "../../core/useClearedOnOpen";
 import { UIFeatureToggleStore } from "../../stores/uifeaturetoggles";
 import { appViewModel, DeviceViewModelContext } from "../app";
 import ToneListControl from "../tone-list";
@@ -79,16 +78,15 @@ const ToneChooserModal = ({ show, onClose }: ToneChooserModalProps) => {
 
   useEffect(() => {}, [tones, favourites, tonecloud]);
 
-  // The ToneCloud tab opens empty rather than restoring the previous search. Results
-  // live in a global store, so the old list would otherwise reappear alongside an
-  // empty search box and look like a result for it.
-  useClearedOnOpen(show, () => {
-    TonesStateStore.update((s) => {
-      s.toneCloudResults = [];
-      s.isSearchInProgress = false;
-    });
-    toneCloudSearch.reset();
-  });
+  // Populate the ToneCloud tab the first time it is opened, preferring the
+  // cached results so opening the modal does not always hit the API.
+  useEffect(() => {
+    if (!show) return;
+    if (viewSelection !== "tonecloud") return;
+    if (tonecloud != null && tonecloud.length > 0) return;
+
+    appViewModel.loadLatestToneCloudTones(true);
+  }, [show, viewSelection]);
 
   const renderTonesView = () => {
     switch (viewSelection) {
