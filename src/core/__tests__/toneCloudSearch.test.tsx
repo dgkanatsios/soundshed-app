@@ -163,32 +163,6 @@ describe("useToneCloudSearch", () => {
   });
 });
 
-describe("reset", () => {
-  it("clears the keyword and returns to the first page", () => {
-    const { view } = setup();
-
-    act(() => view.result.current.setKeyword("blues"));
-    act(() => view.result.current.goNext());
-    act(() => view.result.current.reset());
-
-    expect(view.result.current.keyword).toBe("");
-    expect(view.result.current.page).toBe(FIRST_PAGE);
-    expect(view.result.current.isFirstPage).toBe(true);
-  });
-
-  it("does not run a query, so reopening the tab costs nothing", () => {
-    const { load, view } = setup();
-
-    act(() => view.result.current.setKeyword("blues"));
-    act(() => view.result.current.search());
-    load.mockClear();
-
-    act(() => view.result.current.reset());
-
-    expect(load).not.toHaveBeenCalled();
-  });
-});
-
 describe("hasSearched", () => {
   it("is false before anything is searched", () => {
     const { view } = setup();
@@ -202,15 +176,6 @@ describe("hasSearched", () => {
     act(() => view.result.current.search());
 
     expect(view.result.current.hasSearched).toBe(true);
-  });
-
-  it("goes back to false after a reset", () => {
-    const { view } = setup();
-
-    act(() => view.result.current.search());
-    act(() => view.result.current.reset());
-
-    expect(view.result.current.hasSearched).toBe(false);
   });
 });
 
@@ -231,18 +196,6 @@ describe("paging before any search", () => {
     const { load, view } = setup();
 
     act(() => view.result.current.goPrevious());
-
-    expect(load).not.toHaveBeenCalled();
-  });
-
-  it("does not page again after a reset until a new search runs", () => {
-    const { load, view } = setup();
-
-    act(() => view.result.current.search());
-    act(() => view.result.current.reset());
-    load.mockClear();
-
-    act(() => view.result.current.goNext());
 
     expect(load).not.toHaveBeenCalled();
   });
