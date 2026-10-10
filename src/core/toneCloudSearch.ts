@@ -45,9 +45,6 @@ export interface ToneCloudSearch {
 
   /** True once a query has been run, so an empty list can be worded correctly. */
   hasSearched: boolean;
-
-  /** Clears the keyword and returns to the first page, without running a query. */
-  reset: () => void;
 }
 
 export type ToneCloudLoader = (query: PGPresetQuery) => unknown;
@@ -92,13 +89,6 @@ export function useToneCloudSearch(load: ToneCloudLoader): ToneCloudSearch {
       const target = previousPage(page);
       if (target === page) return;
       runQuery(target);
-    },
-
-    // Deliberately does not call the loader: the surface is being cleared, not searched.
-    reset: () => {
-      setKeyword("");
-      setPage(FIRST_PAGE);
-      setHasSearched(false);
     },
   };
 }
