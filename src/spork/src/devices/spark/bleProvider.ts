@@ -185,9 +185,31 @@ export class BleProvider implements SerialCommsProvider {
 
             return true;
         } catch (err) {
-            this.log(`Service discovery failed for ${serviceUUID}: ${JSON.stringify(err)}`);
+            // JSON.stringify prints "{}" for the DOMExceptions Web Bluetooth throws, so log the
+            // error's name and message, plus the services the device offers, to tell a missing
+            // service apart from a lookup that failed.
+            const reason = this.describeError(err);
+            console.warn(`[BLE Provider] : Service discovery failed for ${serviceUUID}: ${reason}`);
+            bleTrace.record("error", `service ${serviceUUID} failed: ${reason}`);
+            await this.logVisibleServices();
             return false;
         }
+    }
+
+    // Only services listed in optionalServices are visible to the page.
+    private async logVisibleServices() {
+        try {
+            const services = await this.server.getPrimaryServices();
+            const uuids = services.map(s => s.uuid).join(", ") || "none";
+            console.warn(`[BLE Provider] : Services visible to this page: ${uuids}`);
+            bleTrace.record("event", `services visible: ${uuids}`);
+        } catch (err) {
+            console.warn(`[BLE Provider] : Could not list the device's services: ${this.describeError(err)}`);
+        }
+    }
+
+    private describeError(err: any): string {
+        return err?.name ? `${err.name}: ${err.message}` : String(err);
     }
 
     hexToBytes(hex: string) {
